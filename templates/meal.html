@@ -1,10 +1,17 @@
-{% extends "base.html" %}{% block content %}<div class="form"><span class="pill">餐點紀錄</span><h1>直接寫，或拍下你真的吃的。</h1>
-<p class="choice-note">照片可以估食物種類與大致份量，但無法精準知道重量、醬料和烹調油，因此不會假裝算出精確熱量。</p>
+{% extends "base.html" %}{% block content %}<div class="form">
+<span class="pill">7 天飲食追蹤｜目前 {{days}}／7 天</span><h1>直接寫，或拍下你真的吃的。</h1>
+<p class="choice-note">照平常吃、照實記。照片只能估種類與大致份量，不會假裝算出精確熱量。</p>
+<div class="progress">{% for i in range(7) %}<span class="{{'on' if i < days else ''}}"></span>{% endfor %}</div>
 <form method="post" enctype="multipart/form-data"><div class="panel grid">
-<label>這是哪一餐？<select name="meal_type"><option>早餐</option><option>午餐</option><option>晚餐</option><option>點心</option><option>宵夜</option><option>其他</option></select></label>
+<label>這是哪一餐？<select name="meal_type"><option>早餐</option><option>午餐</option><option>晚餐</option><option>點心</option><option>飲料</option><option>宵夜</option><option>其他</option></select></label>
 <label>上傳餐點照片<input type="file" name="photo" accept="image/*"></label>
-<label class="wide">也可以直接描述<textarea name="content" placeholder="例如：雞腿便當，飯吃半盒，青菜吃完，另外喝一杯無糖拿鐵"></textarea></label>
+<label class="wide">餐點內容<textarea name="content" placeholder="例如：雞腿便當，飯吃半盒，青菜吃完，另喝無糖拿鐵"></textarea></label>
+<label>吃之前有多餓？1–10<input name="hunger_before" type="number" min="1" max="10" placeholder="選填"></label>
+<label>吃完有多飽？1–10<input name="fullness_after" type="number" min="1" max="10" placeholder="選填"></label>
+<label>這餐附近喝水 ml<input name="water_ml" type="number" min="0" placeholder="選填"></label>
+<label>補充紀錄<input name="note" placeholder="例如：聚餐、很趕、特別想吃甜食"></label>
 </div><button class="btn">分析並記錄</button></form>
 {% if analysis %}<div class="panel analysis"><b>這餐的分析</b>
 
-{{analysis}}</div>{% endif %}</div>{% endblock %}
+{{analysis}}</div>{% endif %}
+<div class="actions"><a class="btn secondary" href="/week">查看 7 天進度</a></div></div>{% endblock %}

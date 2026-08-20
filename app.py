@@ -39,6 +39,9 @@ def init_db():
       water INTEGER, note TEXT, created_at TEXT
     );
     """)
+    cols={r[1] for r in c.execute("PRAGMA table_info(meals)").fetchall()}
+    for col,typ in [("hunger_before","INTEGER"),("fullness_after","INTEGER"),("water_ml","INTEGER"),("note","TEXT")]:
+        if col not in cols: c.execute(f"ALTER TABLE meals ADD COLUMN {col} {typ}")
     c.commit(); c.close()
 init_db()
 
@@ -296,16 +299,23 @@ def meal():
     if not p:return redirect(url_for("assessment"))
     analysis=None
     if request.method=="POST":
-        text=request.form.get("content","").strip()
-        meal_type=request.form.get("meal_type","其他")
-        img=request.files.get("photo")
-        b=img.read() if img and img.filename else None
-        try: analysis=ai_analyze(text,b,p)
+        text=request.form.get("content","").strip(); meal_type=request.form.get("meal_type","其他")
+        img=request.files.get("photo"); raw=img.read() if img and img.filename else None
+        def num(name):
+            try:return int(request.form.get(name,"") or 0) or None
+            except:return None
+        try: analysis=ai_analyze(text,raw,p)
         except Exception as e: analysis="AI 分析暫時無法完成："+str(e)
-        c=db(); c.execute("INSERT INTO meals(user_key,meal_type,source,content,analysis,created_at) VALUES(?,?,?,?,?,?)",
-            (user_key(),meal_type,"photo" if b else "text",text,analysis,datetime.now().isoformat(timespec="seconds")))
+        c=db(); c.execute("""INSERT INTO meals(user_key,meal_type,source,content,analysis,created_at,hunger_before,fullness_after,water_ml,note)
+        VALUES(?,?,?,?,?,?,?,?,?,?)""",(user_key(),meal_type,"photo" if raw else "text",text,analysis,datetime.now().isoformat(timespec="seconds"),
+        num("hunger_before"),num("fullness_after"),num("water_ml"),request.form.get("note","").strip()))
         c.commit(); c.close()
-    return render_template("meal.html",analysis=analysis)
+    c=db(); rr=c.execute("SELECT created_at FROM meals WHERE user_key=?",(user_key(),)).fetchall(); c.close()
+    days=min(7,len({x["created_at"][:10] for x in rr}))
+    return render_template("meal.html",analysis=analysis,days=days)
+
+def tracked_days(rows):
+    return len({r["created_at"][:10] for r in rows})
 
 @app.route("/week")
 def week():
@@ -313,8 +323,39 @@ def week():
     if not p:return redirect(url_for("assessment"))
     since=(datetime.now()-timedelta(days=7)).isoformat()
     c=db(); rows=c.execute("SELECT * FROM meals WHERE user_key=? AND created_at>=? ORDER BY created_at DESC",(user_key(),since)).fetchall(); c.close()
-    issues,tasks=assess(p)
-    return render_template("week.html",rows=rows,issues=issues,tasks=tasks)
+    issues,tasks=assess(p); days=tracked_days(rows)
+    return render_template("week.html",rows=rows,issues=issues,tasks=tasks,days=days,ready=days>=7)
+
+@app.route("/reassessment")
+def reassessment():
+    p=get_profile()
+    if not p:return redirect(url_for("assessment"))
+    since=(datetime.now()-timedelta(days=7)).isoformat()
+    c=db(); rows=c.execute("SELECT * FROM meals WHERE user_key=? AND created_at>=? ORDER BY created_at",(user_key(),since)).fetchall(); c.close()
+    days=tracked_days(rows)
+    result=None
+    if days>=7:
+        first_summary,priorities=synthesize(p)
+        key=os.getenv("OPENAI_API_KEY")
+        if key:
+            data=[{"time":r["created_at"],"type":r["meal_type"],"content":r["content"],"analysis":r["analysis"],"hunger":r["hunger_before"],"fullness":r["fullness_after"],"note":r["note"]} for r in rows]
+            prompt=f"""請以繁體中文做一般體態管理的7天二次評估，不診斷疾病、不保證減重、不捏造未記錄資料。
+第一次判斷：{first_summary}
+第一次優先方向：{json.dumps(priorities,ensure_ascii=False)}
+7天真實紀錄：{json.dumps(data,ensure_ascii=False)}
+請只輸出 JSON，四個欄位：headline、observed、compare、next。
+observed=真實紀錄最明顯的重複模式；compare=第一次問卷與真實紀錄是否一致；next=下一階段只給一個最優先具體調整。"""
+            try:
+                client=OpenAI(api_key=key)
+                resp=client.responses.create(model=os.getenv("OPENAI_MODEL","gpt-5-mini"),input=[{"role":"user","content":[{"type":"input_text","text":prompt}]}])
+                txt=resp.output_text.strip()
+                if txt.startswith("```"): txt=txt.strip("`").replace("json\n","",1)
+                result=json.loads(txt)
+            except Exception:
+                result={"headline":"7 天紀錄完成，已進入二次評估。","observed":"AI 分析暫時無法完成，但紀錄已保留。","compare":"目前先不改變第一次策略。","next":"稍後重新整理本頁再分析。"}
+        else:
+            result={"headline":"7 天紀錄完成，可以重新校正第一次評估。","observed":f"這 7 天共記錄 {len(rows)} 餐。","compare":"目前尚未啟用 AI，因此不硬推論問卷與實際飲食的差異。","next":"先檢查最常重複出現的餐點模式，一次只調整一件事。"}
+    return render_template("reassessment.html",days=days,result=result)
 
 @app.route("/reset")
 def reset():
@@ -322,7 +363,7 @@ def reset():
     return redirect(url_for("home"))
 
 @app.route("/health")
-def health(): return {"status":"ok","version":"2"}
+def health(): return {"status":"ok","version":"2.2"}
 
 if __name__=="__main__":
     app.run(host="0.0.0.0",port=int(os.getenv("PORT",5000)),debug=True)
