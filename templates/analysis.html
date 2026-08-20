@@ -1,1 +1,0 @@
-{% extends 'base.html' %}{% block content %}<div class="formwrap"><h1>這餐分析完成</h1><div class="analysis">{{ analysis|replace('\n','<br>')|safe }}</div><div class="actions"><a class="btn" href="/analyze">再記一餐</a><a class="btn ghost" href="/history?external_id={{ext}}">看紀錄</a><a class="btn ghost" href="/weekly?external_id={{ext}}">看 7 天</a></div></div>{% endblock %}
