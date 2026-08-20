@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block content %}<span class="pill">個人化評估完成</span><h1>{{p.name}}，目前先不要一次改很多。</h1>
+{% if bmi %}<div class="panel"><span class="rank">目前資料</span><div class="big-number">BMI {{bmi}}</div><div class="choice-note">BMI 只作為其中一項參考，不單獨決定你的飲食。</div></div>{% endif %}
+{% if red %}<div class="panel red"><b>需要先由專業人員個別評估</b><p>你填寫的資料包含：{{red|join("、")}}。這類狀況不適合直接套一般減脂飲食規則；系統不會自行開醫療飲食。</p></div>{% endif %}
+<h2>目前最值得先處理的 3 個地方</h2>
+{% for x in issues %}<div class="panel issue"><div class="rank">優先 {{loop.index}}</div><h3>{{x[0]}}</h3><p>{{x[2]}}</p></div>{% endfor %}
+<h2>第一週先做這 3 件事</h2>{% for t in tasks %}<div class="panel"><b>{{loop.index}}.</b> {{t}}</div>{% endfor %}
+<div class="actions"><a class="btn" href="/meal">開始記錄餐點</a><a class="btn secondary" href="/assessment">修改評估資料</a></div>
+<p class="choice-note">這份結果是體態管理與飲食紀錄用途，不取代醫師或營養師的個別診療。</p>{% endblock %}
