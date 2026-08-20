@@ -1,0 +1,73 @@
+{% extends "base.html" %}{% block content %}<div class="form">
+<span class="pill">初次評估｜約 3–5 分鐘</span><h1>先了解你的真實生活，不先叫你少吃。</h1>
+<div class="progress"><span class="on"></span><span></span><span></span><span></span><span></span></div>
+<form method="post" id="form">
+<section class="step active"><h2>1｜身體與目標</h2><p>建立基本基準，沒有量過的資料可以留白。</p><div class="grid">
+<label>我該怎麼稱呼你？<input name="name" value="{{profile.get('name','')}}" required></label>
+<label>性別<select name="sex"><option value="female">女性</option><option value="male">男性</option><option value="other">其他／不回答</option></select></label>
+<label>年齡<input name="age" type="number" min="18" max="100" required value="{{profile.get('age','')}}"></label>
+<label>身高 cm<input name="height" type="number" step=".1" required value="{{profile.get('height','')}}"></label>
+<label>目前體重 kg<input name="weight" type="number" step=".1" required value="{{profile.get('weight','')}}"></label>
+<label>體脂率 %（選填）<input name="body_fat" type="number" step=".1" value="{{profile.get('body_fat','')}}"></label>
+<label>腰圍 cm（選填）<input name="waist" type="number" step=".1" value="{{profile.get('waist','')}}"></label>
+<label>主要目標<select name="goal"><option value="減重">減重</option><option value="減脂">減脂</option><option value="維持">維持體重</option><option value="增肌改善體態">增肌／改善體態</option></select></label>
+<label>目標體重 kg（選填）<input name="goal_weight" type="number" step=".1"></label>
+<label>近3個月體重變化 kg<input name="recent_change" type="number" step=".1" placeholder="增加3kg填3；減少3kg填-3"></label>
+</div></section>
+
+<section class="step"><h2>2｜生活與活動量</h2><p>「沒運動」不等於「活動量一樣」。</p><div class="grid">
+<label>工作／日常型態<select name="occupation"><option value="mostly_sit">大多坐著</option><option value="mixed">坐站走動都有</option><option value="mostly_stand">大多站立／走動</option><option value="physical">體力工作</option></select></label>
+<label>每天大約坐幾小時<input name="sitting_hours" type="number" step=".5"></label>
+<label>平均每日步數<input name="steps" type="number" placeholder="不知道可留白"></label>
+<label>每週運動幾天<input name="exercise_days" type="number" min="0" max="7" value="0"></label>
+<label>主要運動類型<input name="exercise_type" placeholder="重訓、跑步、瑜伽…"></label>
+<label>每次約幾分鐘<input name="exercise_minutes" type="number"></label>
+<label>平均睡眠時數<input name="sleep_hours" type="number" step=".5"></label>
+<label>睡眠品質<select name="sleep_quality"><option value="good">大多睡得不錯</option><option value="normal">普通</option><option value="poor">常睡不好／醒來仍累</option></select></label>
+</div></section>
+
+<section class="step"><h2>3｜你平常怎麼吃</h2><p>不用填「完美答案」，照平常最常出現的狀況選。</p><div class="grid">
+<label>一天通常幾餐<input name="meals" type="number" min="1" max="6" value="3"></label>
+<label>第一餐通常幾點<input name="first_meal" type="time"></label>
+<label>最後一餐通常幾點<input name="last_meal" type="time"></label>
+<label>外食頻率<select name="eating_out"><option>幾乎不外食</option><option>每週1–3餐</option><option>每天約1餐</option><option>大部分都外食</option></select></label>
+<label>早餐習慣<select name="breakfast"><option>通常會吃</option><option>有時吃</option><option>通常不吃</option></select></label>
+<label>每餐澱粉大約<select name="starch"><option value="none">幾乎不吃</option><option value="half">約半拳／半碗</option><option value="one">約1拳／1碗</option><option value="onehalf">約1.5拳／碗</option><option value="two">2拳／碗以上</option></select></label>
+<label>每餐蛋白質大約<select name="protein"><option value="none">常常沒有明確蛋白質</option><option value="half">約半掌</option><option value="one">約1掌</option><option value="two">約2掌以上</option></select></label>
+<label>每餐蔬菜大約<select name="vegetables"><option value="none">幾乎沒有</option><option value="few">只有幾口</option><option value="half">約半拳／半碗</option><option value="one">約1拳／1碗以上</option></select></label>
+<label>每日飲水 ml<input name="water" type="number"></label>
+<label>含糖飲<select name="sugary_drinks"><option value="never">幾乎沒有</option><option value="rare">每月幾次</option><option value="weekly">每週1–2次</option><option value="often">每週3–6次</option><option value="daily">幾乎每天</option></select></label>
+<label>零食／甜點<select name="snacks"><option value="never">幾乎沒有</option><option value="rare">每月幾次</option><option value="weekly">每週1–2次</option><option value="often">每週3–6次</option><option value="daily">幾乎每天</option></select></label>
+<label>宵夜<select name="late_snack"><option value="never">幾乎沒有</option><option value="rare">每月幾次</option><option value="weekly">每週1–2次</option><option value="often">每週3–6次</option><option value="daily">幾乎每天</option></select></label>
+<label>酒精<select name="alcohol"><option value="never">不喝／極少</option><option value="rare">每月幾次</option><option value="weekly">每週1–2次</option><option value="often">每週3–6次</option><option value="daily">幾乎每天</option></select></label>
+<label>咖啡飲料頻率<input name="coffee" placeholder="例如：每天一杯拿鐵"></label>
+<label>最容易失控的食物／時段<input name="trigger_food" placeholder="例如：晚上甜食、週末聚餐"></label>
+</div></section>
+
+<section class="step"><h2>4｜過去減重經驗</h2><p>同樣的體重，剛開始調整與已經卡兩個月，做法不應該一樣。</p><div class="grid">
+<label>以前有成功瘦過嗎？<select name="past_success"><option value="no">沒有／不確定</option><option value="yes">有</option></select></label>
+<label>最多曾瘦幾 kg<input name="max_loss" type="number" step=".1"></label>
+<label>後來有復胖嗎？<select name="regain"><option>沒有</option><option>有一點</option><option>大部分復胖</option><option>超過原本體重</option></select></label>
+<label class="wide">用過哪些方法？<input name="methods" placeholder="飲食控制、168、低碳、代餐、健身、減重藥物…"></label>
+<label>現在是否正在控制飲食？<select name="current_diet"><option value="no">沒有特別控制</option><option value="moderate">有，正常控制份量</option><option value="very_low">有，而且吃得非常少／常跳餐</option></select></label>
+<label>已經執行幾週<input name="diet_weeks" type="number" min="0"></label>
+<label>近4週體重變化 kg<input name="four_week_change" type="number" step=".1" placeholder="下降填負數"></label>
+</div></section>
+
+<section class="step"><h2>5｜安全篩檢</h2><p>這不是醫療診斷。部分狀況不適合直接套一般減脂建議。</p><div class="grid">
+<label>目前懷孕？<select name="pregnant"><option value="no">否</option><option value="yes">是</option></select></label>
+<label>目前哺乳？<select name="breastfeeding"><option value="no">否</option><option value="yes">是</option></select></label>
+<label>若近期產後，約多久？<input name="postpartum" placeholder="例如：產後3個月；非產後留白"></label>
+<label class="wide">已知疾病／特殊健康狀況<input name="conditions" placeholder="例如：腎臟疾病、糖尿病、甲狀腺疾病；沒有填無"></label>
+<label class="wide">目前固定藥物／減重藥物<input name="meds" placeholder="沒有填無"></label>
+<label>是否曾有暴食、催吐或進食障礙相關困擾？<select name="risk_eating"><option value="no">否</option><option value="yes">是／不確定</option></select></label>
+</div></section>
+
+<div class="stepnav"><button type="button" class="btn secondary" id="prev" style="visibility:hidden">上一步</button><button type="button" class="btn" id="next">下一步</button></div>
+</form></div>
+<script>
+let i=0;const steps=[...document.querySelectorAll('.step')], bars=[...document.querySelectorAll('.progress span')],prev=document.getElementById('prev'),next=document.getElementById('next'),form=document.getElementById('form');
+function show(){steps.forEach((x,j)=>x.classList.toggle('active',j===i));bars.forEach((x,j)=>x.classList.toggle('on',j<=i));prev.style.visibility=i?'visible':'hidden';next.textContent=i===steps.length-1?'完成評估':'下一步';window.scrollTo({top:0,behavior:'smooth'})}
+next.onclick=()=>{let req=[...steps[i].querySelectorAll('[required]')];if(req.some(x=>!x.reportValidity()))return;if(i<steps.length-1){i++;show()}else form.submit()}
+prev.onclick=()=>{if(i){i--;show()}};show();
+</script>{% endblock %}
