@@ -1,6 +1,0 @@
-{% extends "base.html" %}{% block content %}<span class="pill">近 7 天</span><h1>不是看某一餐好不好，而是找重複出現的模式。</h1>
-<div class="cards"><div class="card"><b>紀錄餐數</b><div class="big-number">{{rows|length}}</div></div>
-{% for x in issues[:2] %}<div class="card"><b>{{x[0]}}</b><p>{{x[2]}}</p></div>{% endfor %}</div>
-<h2>目前優先任務</h2>{% for t in tasks %}<div class="panel">{{loop.index}}. {{t}}</div>{% endfor %}
-<h2>最近餐點</h2>{% if rows %}{% for r in rows %}<div class="panel"><b>{{r['meal_type']}}</b> <span class="rank">{{r['created_at'][:16]}}</span><p>{{r['content']}}</p><div class="analysis">{{r['analysis']}}</div></div>{% endfor %}{% else %}<div class="panel">還沒有餐點紀錄。先記錄幾餐後，這裡才會開始有意義。</div>{% endif %}
-{% endblock %}
