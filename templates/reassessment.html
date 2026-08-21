@@ -1,9 +1,0 @@
-{% extends "base.html" %}{% block content %}
-<span class="pill">V2.2｜7 天二次評估</span><h1>用你真的吃了什麼，重新校正第一次判斷。</h1>
-{% if not result %}<div class="panel"><div class="big-number">{{days}} / 7 天</div><p>滿 7 個不同日期的紀錄後，這裡會開啟二次評估。</p><a class="btn" href="/meal">繼續記錄</a></div>
-{% else %}<div class="panel"><div class="rank">二次評估核心結論</div><h2>{{result.headline}}</h2></div>
-<h2>7 天真實紀錄看到了什麼</h2><div class="panel issue"><p>{{result.observed}}</p></div>
-<h2>和第一次評估相比</h2><div class="panel"><p>{{result.compare}}</p></div>
-<h2>下一階段先做這一件事</h2><div class="panel task"><b>{{result.next}}</b></div>
-<div class="actions"><a class="btn" href="/meal">繼續記錄</a><a class="btn secondary" href="/result">回看第一次評估</a></div>{% endif %}
-<p class="choice-note">本工具用於一般體態管理與飲食紀錄，不取代醫療診斷或個別營養治療。</p>{% endblock %}
