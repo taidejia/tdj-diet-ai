@@ -1,9 +1,1 @@
-{% extends "base.html" %}{% block content %}
-<section class="hero"><span class="pill">個人化飲食評估</span><h1>拍一餐，知道下一步<br>該調整什麼。</h1>
-<p>不是只算卡路里。系統會先了解你的體態目標、生活型態與平常飲食，再從反覆出現的模式找出最值得先改的地方。</p>
-<div class="actions"><a class="btn" href="/assessment">{{ "重新評估" if profile else "開始體態評估" }}</a><a class="btn secondary" href="/meal">記錄／分析這餐</a></div></section>
-<div class="cards"><div class="card"><b>01｜先了解你</b><p>身體資料、生活活動、飲食習慣、減重經驗與安全篩檢。</p></div>
-<div class="card"><b>02｜找前三大卡點</b><p>不是一次改十件事，而是找目前最值得優先處理的問題。</p></div>
-<div class="card"><b>03｜持續追蹤</b><p>餐點文字或照片會累積成紀錄，後續再依趨勢調整。</p></div></div>
-{% if profile %}<div class="panel"><b>{{profile.name or "你"}}的個人檔案已建立。</b> <a href="/result">查看目前評估結果 →</a></div>{% endif %}
-{% endblock %}
+{% extends "base.html" %}{% block content %}<section class="hero"><span class="pill">TDJ AI 餐盤教練</span><h1>拍下這一餐，直接告訴你<br>還差什麼、今天還能吃多少。</h1><p>先建立每日熱量與三大營養素目標，之後每餐用照片或文字估算並累計。</p><div class="actions"><a class="btn" href="{{'/meal' if profile else '/assessment'}}">{{'分析這一餐' if profile else '第一次設定'}}</a>{% if profile %}<a class="btn secondary" href="/result">查看每日目標</a>{% endif %}</div></section><div class="cards"><div class="card"><b>01｜每日目標</b><p>熱量、蛋白質、碳水、脂肪。</p></div><div class="card"><b>02｜每餐分析</b><p>照片或文字，直接告訴你缺什麼。</p></div><div class="card"><b>03｜剩餘額度</b><p>自動累計今天已吃與還能吃多少。</p></div></div>{% endblock %}

@@ -15,3 +15,5 @@ label{font-size:14px;font-weight:750}input,select,textarea{width:100%;margin-top
 @media(max-width:700px){header nav a:nth-child(n+3){display:none}main{padding:24px 14px 60px}.hero{padding:24px 0}.hero h1{font-size:36px}.cards,.grid{grid-template-columns:1fr}.wide{grid-column:auto}.actions .btn{width:100%;text-align:center}}
 
 .evidence{margin-top:14px;padding:13px 15px;background:var(--soft);border-radius:12px;font-size:14px}.evidence ul{margin:8px 0 0;padding-left:20px}.task{font-size:16px}
+
+.macro-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:15px}.macro-grid>div{background:var(--soft);padding:14px;border-radius:12px;text-align:center}.macro-grid strong{display:block;font-size:24px;margin:7px 0}.macro-grid small{color:var(--muted)}details summary{cursor:pointer}@media(max-width:700px){.macro-grid{grid-template-columns:1fr 1fr}}

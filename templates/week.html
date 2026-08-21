@@ -1,10 +1,1 @@
-{% extends "base.html" %}{% block content %}
-<span class="pill">7 天飲食追蹤</span><h1>不是看某一餐好不好，而是找重複出現的模式。</h1>
-<div class="panel"><div class="rank">追蹤進度</div><div class="big-number">{{days}} / 7 天</div>
-<div class="progress">{% for i in range(7) %}<span class="{{'on' if i < days else ''}}"></span>{% endfor %}</div>
-{% if ready %}<p><b>已完成 7 天，可以做二次評估。</b></p><a class="btn" href="/reassessment">查看二次評估</a>
-{% else %}<p>還差 {{7-days}} 天。照平常吃、照實記，資料才有判斷價值。</p><a class="btn" href="/meal">繼續記錄餐點</a>{% endif %}</div>
-<div class="cards"><div class="card"><b>紀錄餐數</b><div class="big-number">{{rows|length}}</div></div>{% for x in issues[:2] %}<div class="card"><b>{{x[0]}}</b><p>{{x[2]}}</p></div>{% endfor %}</div>
-<h2>第一次評估的優先任務</h2>{% for t in tasks %}<div class="panel">{{loop.index}}. {{t}}</div>{% endfor %}
-<h2>最近餐點</h2>{% if rows %}{% for r in rows %}<div class="panel"><b>{{r['meal_type']}}</b> <span class="rank">{{r['created_at'][:16]}}</span><p>{{r['content'] or '照片紀錄'}}</p><div class="analysis">{{r['analysis']}}</div></div>{% endfor %}{% else %}<div class="panel">還沒有餐點紀錄。</div>{% endif %}
-{% endblock %}
+{% extends "base.html" %}{% block content %}<span class="pill">最近 7 天</span><h1>你的餐點紀錄</h1>{% if rows %}{% for r in rows %}<div class="panel"><b>{{r['meal_type']}}</b> <span class="rank">{{r['created_at'][:16]}}</span><p>{{r['content'] or '照片紀錄'}}</p><p><b>約 {{(r['calories'] or 0)|round|int}} kcal｜P {{(r['protein_g'] or 0)|round|int}}g｜C {{(r['carbs_g'] or 0)|round|int}}g｜F {{(r['fat_g'] or 0)|round|int}}g</b></p><div class="analysis">{{r['analysis']}}</div></div>{% endfor %}{% else %}<div class="panel">還沒有餐點紀錄。</div>{% endif %}{% endblock %}
