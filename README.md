@@ -1,6 +1,28 @@
-# TDJ AI 餐盤教練 1.1 LINE 會員權限版
-新增 LINE Login、未開通禁用、後台 +30/+60/+90 天、每日預設 6 次 AI 上限、客戶餐點歸戶。
-Render 需設定 OPENAI_API_KEY、SECRET_KEY、LINE_LOGIN_CHANNEL_ID、LINE_LOGIN_CHANNEL_SECRET、ADMIN_TOKEN。
-LINE Callback URL：`https://你的網址/line/callback`
-管理後台：`https://你的網址/admin?token=你的ADMIN_TOKEN`
-重要：目前 SQLite 僅適合測試。正式營運前要換持久化資料庫，避免 Render 重新部署造成資料遺失。
+# TDJ AI 餐盤教練 1.3 — 營養公式＋飲水追蹤版
+
+## 本版重點
+- 減脂不再全部固定使用 18% 熱量赤字
+- 蛋白質不再「減脂 = 體重 × 1.6」
+- 依活動量、運動天數與目標決定蛋白質倍率
+- 脂肪保留實用下限，碳水用剩餘熱量分配
+- 明確標示「碳水克數不是白飯/澱粉重量」
+- 每日飲水起始目標
+- 今日已喝 / 還差多少
+- +250 / +500 / 自訂 ml 快速記水
+- 近 7 天飲水紀錄
+- 後台可查看客戶飲水紀錄
+- AI 餐點分析會考慮「今天剩餘額度、飢餓/飽足、吃前/吃後」
+- PostgreSQL 持久化資料
+
+## Render
+Build:
+`pip install -r requirements.txt`
+
+Start:
+`gunicorn app:app --timeout 120`
+
+部署後 `/health` 應顯示：
+- version = meal-coach-1.3
+- database = postgres
+
+注意：所有每日營養與飲水數字皆為一般成人體態管理起始估算，不是醫療營養處方。
