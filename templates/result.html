@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% block content %}
+<span class="pill">你的每日營養基準</span>
+<h1>{{p.name}}，先從這個範圍開始。</h1>
+{% if red %}<div class="panel red"><b>不建議直接套用一般熱量目標</b><p>你填寫了：{{red|join("、")}}。建議由醫師或營養專業人員個別設定。</p></div>{% endif %}
+
+<div class="cards">
+  <div class="card"><b>每日熱量</b><div class="big-number">{{p.daily_calories|round|int}}</div><p>kcal</p></div>
+  <div class="card"><b>蛋白質</b><div class="big-number">{{p.daily_protein|round|int}}g</div><p>{{p.weight}}kg × {{(p.protein_factor or 0)}} g/kg</p></div>
+  <div class="card"><b>碳水化合物</b><div class="big-number">{{p.daily_carbs|round|int}}g</div><p>由總熱量扣除蛋白質與脂肪後分配</p></div>
+</div>
+
+<div class="cards">
+  <div class="card"><b>脂肪</b><div class="big-number">{{p.daily_fat|round|int}}g</div><p>保留基本脂肪攝取</p></div>
+  <div class="card"><b>每日飲水</b><div class="big-number">{{(p.daily_water_ml or 0)|round|int}}</div><p>ml 起始目標</p></div>
+  <div class="card"><b>BMI 參考</b><div class="big-number">{{p.bmi_calc}}</div><p>僅作背景參考</p></div>
+</div>
+
+<div class="panel">
+  <h3>系統為什麼算成這樣？</h3>
+  <p>你目前選擇「{{p.goal}}」，依 BMI、活動量與運動頻率，熱量使用約 <b>{{p.calorie_deficit_pct|round|int}}%</b> 的調整幅度。</p>
+  <p>蛋白質不是所有減脂者一律 ×1.6；你目前依活動量與運動頻率使用 <b>{{(p.protein_factor or 0)}} g/kg</b>。</p>
+  <p>「碳水化合物 g」不是白飯或澱粉的重量，而是所有食物中的碳水總量。</p>
+  <p class="choice-note">這些是一般成人體態管理的起始估算，不是醫療營養處方。若體重、飽足、活動量或身體狀況有明顯變化，應重新調整。</p>
+</div>
+<div class="actions"><a class="btn" href="/meal">開始分析這一餐</a><a class="btn secondary" href="/assessment">修改基本資料</a></div>
+{% endblock %}
