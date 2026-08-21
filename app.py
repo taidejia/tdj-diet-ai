@@ -46,15 +46,50 @@ def init_db():
     profile_cols={r[1] for r in c.execute("PRAGMA table_info(profiles)").fetchall()}
     for col,typ in [("activity_level","TEXT"),("daily_calories","REAL"),("daily_protein","REAL"),("daily_carbs","REAL"),("daily_fat","REAL")]:
         if col not in profile_cols: c.execute(f"ALTER TABLE profiles ADD COLUMN {col} {typ}")
+    c.executescript("""
+    CREATE TABLE IF NOT EXISTS memberships(
+      line_user_id TEXT PRIMARY KEY, display_name TEXT, status TEXT DEFAULT 'inactive',
+      starts_at TEXT, expires_at TEXT, daily_limit INTEGER DEFAULT 6,
+      created_at TEXT, updated_at TEXT
+    );
+    """)
+    pcols={r[1] for r in c.execute("PRAGMA table_info(profiles)").fetchall()}
+    for col,typ in [("line_user_id","TEXT"),("line_display_name","TEXT")]:
+        if col not in pcols: c.execute(f"ALTER TABLE profiles ADD COLUMN {col} {typ}")
     c.commit(); c.close()
 init_db()
 
+def current_line_user(): return session.get("line_user")
+
 def user_key():
-    return session.setdefault("user_key", "web-"+os.urandom(8).hex())
+    u=current_line_user()
+    return "line-"+u["userId"] if u and u.get("userId") else session.setdefault("user_key","web-"+os.urandom(8).hex())
 
 def get_profile():
-    c=db(); r=c.execute("SELECT * FROM profiles WHERE user_key=?", (user_key(),)).fetchone(); c.close()
+    c=db(); r=c.execute("SELECT * FROM profiles WHERE user_key=?",(user_key(),)).fetchone(); c.close()
     return dict(r) if r else None
+
+def membership():
+    u=current_line_user()
+    if not u:return None
+    c=db(); r=c.execute("SELECT * FROM memberships WHERE line_user_id=?",(u["userId"],)).fetchone(); c.close()
+    return dict(r) if r else None
+
+def member_active():
+    m=membership()
+    if not m or m.get("status")!="active" or not m.get("expires_at"): return False
+    try:return datetime.fromisoformat(m["expires_at"])>=datetime.now()
+    except:return False
+
+def guard_member():
+    if not current_line_user(): return redirect(url_for("line_login"))
+    if not member_active(): return redirect(url_for("membership_required"))
+    return None
+
+def today_usage():
+    today=datetime.now().date().isoformat(); c=db()
+    r=c.execute("SELECT COUNT(*) n FROM meals WHERE user_key=? AND substr(created_at,1,10)=?",(user_key(),today)).fetchone(); c.close()
+    return int(r["n"] or 0)
 
 def calculate_targets(p):
     sex=p.get("sex","female"); age=float(p.get("age") or 30); h=float(p.get("height") or 160); w=float(p.get("weight") or 60)
@@ -75,8 +110,41 @@ def safety(p):
     if "insulin" in cond or "胰島素" in cond: red.append("使用胰島素")
     return red
 
+@app.route("/line/login")
+def line_login():
+    cid=os.getenv("LINE_LOGIN_CHANNEL_ID")
+    if not cid:
+        session["line_user"]={"userId":"demo-line-user","displayName":"測試會員"}
+        return redirect(url_for("home"))
+    from urllib.parse import urlencode
+    state=os.urandom(12).hex(); session["line_state"]=state
+    return redirect("https://access.line.me/oauth2/v2.1/authorize?"+urlencode({
+      "response_type":"code","client_id":cid,"redirect_uri":url_for("line_callback",_external=True),
+      "state":state,"scope":"profile openid"}))
+
+@app.route("/line/callback")
+def line_callback():
+    if request.args.get("state")!=session.get("line_state"): return "LINE login state error",400
+    tok=requests.post("https://api.line.me/oauth2/v2.1/token",data={
+      "grant_type":"authorization_code","code":request.args.get("code"),
+      "redirect_uri":url_for("line_callback",_external=True),
+      "client_id":os.getenv("LINE_LOGIN_CHANNEL_ID"),
+      "client_secret":os.getenv("LINE_LOGIN_CHANNEL_SECRET")},timeout=15)
+    if tok.status_code!=200:return "LINE token error",400
+    prof=requests.get("https://api.line.me/v2/profile",headers={"Authorization":"Bearer "+tok.json()["access_token"]},timeout=15)
+    if prof.status_code!=200:return "LINE profile error",400
+    p=prof.json(); session["line_user"]={"userId":p["userId"],"displayName":p.get("displayName","LINE會員")}
+    now=datetime.now().isoformat(timespec="seconds"); c=db()
+    c.execute("""INSERT INTO memberships(line_user_id,display_name,status,created_at,updated_at) VALUES(?,?,?,?,?)
+      ON CONFLICT(line_user_id) DO UPDATE SET display_name=excluded.display_name,updated_at=excluded.updated_at""",
+      (p["userId"],p.get("displayName"),"inactive",now,now)); c.commit(); c.close()
+    return redirect(url_for("home"))
+
+@app.route("/membership-required")
+def membership_required(): return render_template("membership_required.html",user=current_line_user(),member=membership())
+
 @app.route("/")
-def home(): return render_template("home.html",profile=get_profile())
+def home(): return render_template("home.html",profile=get_profile(),line_user=current_line_user(),member=membership(),active=member_active())
 
 @app.route("/assessment",methods=["GET","POST"])
 def assessment():
@@ -91,7 +159,8 @@ def assessment():
                 except:v=None
             data[x]=v
         data.update(calculate_targets(data)); data["user_key"]=user_key(); now=datetime.now().isoformat(timespec="seconds")
-        save=fields+["daily_calories","daily_protein","daily_carbs","daily_fat"]
+        lu=current_line_user() or {}; data["line_user_id"]=lu.get("userId"); data["line_display_name"]=lu.get("displayName")
+        save=fields+["daily_calories","daily_protein","daily_carbs","daily_fat","line_user_id","line_display_name"]
         c=db(); old=c.execute("SELECT id FROM profiles WHERE user_key=?",(user_key(),)).fetchone()
         if old:
             c.execute("UPDATE profiles SET "+",".join(f"{k}=?" for k in save)+",updated_at=? WHERE user_key=?",[data[k] for k in save]+[now,user_key()])
@@ -103,6 +172,8 @@ def assessment():
 
 @app.route("/result")
 def result():
+    g=guard_member()
+    if g:return g
     p=get_profile()
     if not p:return redirect(url_for("assessment"))
     return render_template("result.html",p=p,red=safety(p))
@@ -138,10 +209,16 @@ def remaining(p,t):
 
 @app.route("/meal",methods=["GET","POST"])
 def meal():
+    g=guard_member()
+    if g:return g
     p=get_profile()
     if not p:return redirect(url_for("assessment"))
     analysis=None; error=None; form_data={}
     if request.method=="POST":
+        m=membership() or {}; limit=int(m.get("daily_limit") or 6)
+        if today_usage()>=limit:
+            totals=today_totals(); rem=remaining(p,totals)
+            return render_template("meal.html",analysis=None,error=f"今天已達 {limit} 次 AI 分析上限。",p=p,totals=totals,remaining=rem,form_data={},usage=today_usage(),limit=limit)
         form_data=request.form.to_dict(); text=request.form.get("content","").strip(); meal_type=request.form.get("meal_type","其他"); timing=request.form.get("timing","before")
         img=request.files.get("photo"); raw=img.read() if img and img.filename else None
         def num(n):
@@ -155,13 +232,15 @@ def meal():
             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",(user_key(),meal_type,"photo" if raw else "text",text,summary,datetime.now().isoformat(timespec="seconds"),num("hunger_before"),num("fullness_after"),num("water_ml"),request.form.get("note","").strip(),analysis.get("calories"),analysis.get("protein_g"),analysis.get("carbs_g"),analysis.get("fat_g"),analysis.get("veg_fists"),analysis.get("estimate_note")))
             c.commit(); c.close()
     totals=today_totals(); rem=remaining(p,totals)
-    return render_template("meal.html",analysis=analysis,error=error,p=p,totals=totals,remaining=rem,form_data=form_data)
+    return render_template("meal.html",analysis=analysis,error=error,p=p,totals=totals,remaining=rem,form_data=form_data,usage=today_usage(),limit=int((membership() or {}).get("daily_limit") or 6))
 
 def tracked_days(rows):
     return len({r["created_at"][:10] for r in rows})
 
 @app.route("/week")
 def week():
+    g=guard_member()
+    if g:return g
     p=get_profile()
     if not p:return redirect(url_for("assessment"))
     since=(datetime.now()-timedelta(days=7)).isoformat(); c=db()
@@ -204,8 +283,43 @@ def reset():
     session.clear()
     return redirect(url_for("home"))
 
+def admin_ok():
+    return bool(os.getenv("ADMIN_TOKEN") and (request.args.get("token") or request.form.get("token"))==os.getenv("ADMIN_TOKEN"))
+
+@app.route("/admin")
+def admin():
+    if not admin_ok(): return "Unauthorized",401
+    today=datetime.now().date().isoformat(); c=db()
+    rows=c.execute("""SELECT m.*,p.name,p.weight,p.goal,
+      (SELECT COUNT(*) FROM meals x WHERE x.user_key='line-'||m.line_user_id AND substr(x.created_at,1,10)=?) today_uses
+      FROM memberships m LEFT JOIN profiles p ON p.line_user_id=m.line_user_id ORDER BY m.updated_at DESC""",(today,)).fetchall(); c.close()
+    return render_template("admin.html",rows=rows,token=request.args.get("token"))
+
+@app.route("/admin/member/<uid>",methods=["POST"])
+def admin_member(uid):
+    if not admin_ok(): return "Unauthorized",401
+    days=int(request.form.get("days","30")); now=datetime.now(); c=db()
+    old=c.execute("SELECT expires_at FROM memberships WHERE line_user_id=?",(uid,)).fetchone(); start=now
+    if old and old["expires_at"]:
+        try:
+            e=datetime.fromisoformat(old["expires_at"])
+            if e>now:start=e
+        except: pass
+    exp=start+timedelta(days=days)
+    c.execute("UPDATE memberships SET status='active',starts_at=COALESCE(starts_at,?),expires_at=?,updated_at=? WHERE line_user_id=?",
+      (now.isoformat(timespec="seconds"),exp.isoformat(timespec="seconds"),now.isoformat(timespec="seconds"),uid)); c.commit(); c.close()
+    return redirect(url_for("admin",token=request.form.get("token")))
+
+@app.route("/admin/client/<uid>")
+def admin_client(uid):
+    if not admin_ok(): return "Unauthorized",401
+    c=db(); p=c.execute("SELECT * FROM profiles WHERE line_user_id=?",(uid,)).fetchone()
+    meals=c.execute("SELECT * FROM meals WHERE user_key=? ORDER BY created_at DESC LIMIT 100",("line-"+uid,)).fetchall()
+    m=c.execute("SELECT * FROM memberships WHERE line_user_id=?",(uid,)).fetchone(); c.close()
+    return render_template("admin_client.html",p=p,meals=meals,m=m,token=request.args.get("token"))
+
 @app.route("/health")
-def health(): return {"status":"ok","version":"meal-coach-1.0"}
+def health(): return {"status":"ok","version":"meal-coach-1.1"}
 
 if __name__=="__main__":
     app.run(host="0.0.0.0",port=int(os.getenv("PORT",5000)),debug=True)
