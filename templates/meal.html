@@ -1,0 +1,72 @@
+{% extends "base.html" %}{% block content %}<div class="form">
+<span class="pill">AI 餐盤分析｜今日 {{usage}} / {{limit}} 次</span>
+<h1>這餐吃得怎麼樣？</h1>
+
+<div class="cards">
+  <div class="card"><b>今天已吃</b><div class="big-number">{{totals.calories|round|int}}</div><p>/ {{p.daily_calories|round|int}} kcal</p></div>
+  <div class="card"><b>蛋白質</b><div class="big-number">{{totals.protein|round|int}}g</div><p>還可約 {{remaining.protein|round|int}}g</p></div>
+  <div class="card"><b>碳水化合物</b><div class="big-number">{{totals.carbs|round|int}}g</div><p>還可約 {{remaining.carbs|round|int}}g</p></div>
+</div>
+
+<div class="panel">
+  <b>今天剩餘：約 {{remaining.calories|round|int}} kcal｜脂肪 {{remaining.fat|round|int}}g</b>
+</div>
+
+<div class="panel water-panel">
+  <div>
+    <span class="rank">今日飲水</span>
+    <h2>{{totals.water|round|int}} / {{(p.daily_water_ml or 0)|round|int}} ml</h2>
+    <p>還差約 {{remaining.water|round|int}} ml</p>
+  </div>
+  <div class="water-actions">
+    {% for amount in [250,500] %}
+    <form method="post" action="/water"><input type="hidden" name="amount_ml" value="{{amount}}"><button class="btn secondary" type="submit">+{{amount}} ml</button></form>
+    {% endfor %}
+    <form method="post" action="/water" class="water-custom">
+      <input type="number" name="amount_ml" min="1" max="3000" placeholder="自訂 ml">
+      <button class="btn secondary" type="submit">記錄</button>
+    </form>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="meal-analysis-form">
+<input type="hidden" name="form_token" value="{{form_token}}">
+<div class="panel grid">
+<label>分析時點<select name="timing"><option value="before" {{'selected' if form_data.get('timing','before')=='before'}}>還沒吃｜幫我看怎麼調</option><option value="after" {{'selected' if form_data.get('timing')=='after'}}>已經吃完｜告訴我下一餐</option></select></label>
+<label>餐別<select name="meal_type">{% for x in ['早餐','午餐','晚餐','點心','飲料','宵夜','其他'] %}<option {{'selected' if form_data.get('meal_type')==x}}>{{x}}</option>{% endfor %}</select></label>
+<label class="wide">上傳餐點照片<input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/*"><small class="choice-note">手機照片會自動縮圖與轉檔後再分析，不會直接送原始大圖。</small></label>
+<label class="wide">餐點內容／已知份量<textarea name="content" placeholder="例如：白飯150g、雞胸120g、青菜一碗；有包裝營養標示也可以直接輸入">{{form_data.get('content','')}}</textarea></label>
+<label>吃之前多餓？1–10<input name="hunger_before" type="number" min="1" max="10" value="{{form_data.get('hunger_before','')}}"></label>
+<label>吃完多飽？1–10<input name="fullness_after" type="number" min="1" max="10" value="{{form_data.get('fullness_after','')}}"></label>
+<label>這餐附近喝水 ml<input name="water_ml" type="number" min="0" value="{{form_data.get('water_ml','')}}"></label>
+<label>補充紀錄<input name="note" value="{{form_data.get('note','')}}" placeholder="聚餐、醬料、運動後等"></label>
+</div>
+<button class="btn" id="analyze-submit" type="submit">分析這一餐</button>
+<div id="analyze-wait" class="choice-note" style="display:none">AI 正在分析，請不要重複按送出。通常數秒到 30 秒內完成。</div>
+</form>
+
+{% if error %}<div class="panel red">{{error}}</div>{% endif %}
+
+{% if analysis %}
+<div class="panel coach-verdict"><div class="rank">AI 教練判斷｜信心 {{analysis.confidence}}</div><h2>{{analysis.overall}}</h2><p class="choice-note">本餐估算約 {{analysis.calories|round|int}} kcal</p></div>
+<div class="panel"><div class="macro-grid"><div><b>蛋白質</b><strong>{{analysis.protein_g|round|int}}g</strong><small>{{analysis.protein_status}}</small></div><div><b>碳水</b><strong>{{analysis.carbs_g|round|int}}g</strong><small>{{analysis.carbs_status}}</small></div><div><b>脂肪</b><strong>{{analysis.fat_g|round|int}}g</strong><small>{{analysis.fat_status}}</small></div><div><b>蔬菜</b><strong>{{analysis.veg_fists}}拳</strong><small>{{analysis.veg_status}}</small></div></div></div>
+<div class="panel issue"><h3>這餐做得好的地方</h3><p>{{analysis.good}}</p></div>
+<div class="panel task"><h3>現在最值得做的一件事</h3><p><b>{{analysis.advice}}</b></p></div>
+<div class="panel remaining-box"><div class="rank">吃完這餐後，今天大約還有</div><h3>{{analysis.remaining_after}}</h3></div>
+<div class="panel"><h3>下一餐怎麼安排</h3><p>{{analysis.next_meal}}</p><p class="choice-note">{{analysis.estimate_note}}</p></div>
+{% endif %}
+<div class="actions"><a class="btn secondary" href="/week">查看最近紀錄</a></div>
+<script>
+(function(){
+ const form=document.getElementById('meal-analysis-form');
+ const btn=document.getElementById('analyze-submit');
+ const wait=document.getElementById('analyze-wait');
+ if(!form||!btn)return;
+ form.addEventListener('submit',function(){
+   if(btn.disabled)return false;
+   btn.disabled=true; btn.textContent='分析中…';
+   if(wait)wait.style.display='block';
+ });
+})();
+</script>
+</div>{% endblock %}
