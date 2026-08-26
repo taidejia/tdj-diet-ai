@@ -1,0 +1,46 @@
+{% extends "base.html" %}{% block content %}
+{% if active and profile %}
+<span class="pill">今天的體態管理進度</span>
+<h1>{{profile.name}}，今天先看這四件事。</h1>
+<p class="choice-note">不是要把所有數字吃滿；重點是知道今天接下來該優先顧什麼。</p>
+
+<div class="today-status-grid">
+  <div class="status-card status-wide">
+    <b>熱量</b><strong>{{totals.calories|round|int}} / {{profile.daily_calories|round|int}} kcal</strong>
+    <span>約還有 {{remaining.calories|round|int}} kcal 參考空間</span>
+  </div>
+  <div class="status-card">
+    <b>蛋白質</b><strong>{{totals.protein|round|int}} / {{profile.daily_protein|round|int}}g</strong>
+    <span>{{progress.protein.status}}</span>
+  </div>
+  <div class="status-card">
+    <b>碳水</b><strong>{{totals.carbs|round|int}} / {{profile.daily_carbs|round|int}}g</strong>
+    <span>{{progress.carbs.status}}</span>
+  </div>
+  <div class="status-card">
+    <b>脂肪</b><strong>{{totals.fat|round|int}} / {{profile.daily_fat|round|int}}g</strong>
+    <span>{{progress.fat.status}}</span>
+  </div>
+  <div class="status-card">
+    <b>蔬菜</b><strong>{{totals.veg}} / 3拳</strong>
+    <span>{{progress.veg.status}}</span>
+  </div>
+</div>
+
+<div class="actions">
+  <a class="btn" href="/meal">分析這一餐</a>
+  <a class="btn secondary" href="/week">查看最近紀錄</a>
+</div>
+{% else %}
+<section class="hero">
+  <span class="pill">TDJ AI 餐盤教練</span>
+  <h1>拍下這一餐，告訴你今天接下來怎麼吃。</h1>
+  <p>不是只算熱量，而是把每餐累計成今天的體態管理進度，找出蛋白質、主食、油脂與蔬菜真正需要調整的地方。</p>
+  <div class="actions">
+    {% if not line_user %}<a class="btn" href="/line/login">用 LINE 登入</a>
+    {% elif not active %}<a class="btn" href="/membership-required">查看使用資格</a>
+    {% elif not profile %}<a class="btn" href="/assessment">第一次設定</a>{% endif %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
