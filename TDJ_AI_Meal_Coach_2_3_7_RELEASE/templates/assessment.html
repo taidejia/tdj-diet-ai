@@ -1,0 +1,52 @@
+{% extends "base.html" %}{% block content %}
+<div class="form">
+  <span class="pill">第一次設定｜約 1 分鐘</span>
+  <h1>先算出你的每日基準。</h1>
+  <p class="choice-note">系統會依年齡、身高、體重、活動量、運動頻率與目標，估算每日熱量與營養配置；之後再依實際趨勢調整。</p>
+  <form method="post">
+    <input type="hidden" name="custom_water_ml" value="{{profile.get('custom_water_ml') or ''}}">
+    <div class="panel grid">
+      <label>怎麼稱呼你？<input name="name" required value="{{profile.get('name','')}}"></label>
+      <label>性別
+        <select name="sex">
+          <option value="female" {{'selected' if profile.get('sex','female')=='female'}}>女性</option>
+          <option value="male" {{'selected' if profile.get('sex')=='male'}}>男性</option>
+          <option value="other" {{'selected' if profile.get('sex')=='other'}}>其他／不回答</option>
+        </select>
+      </label>
+      <label>年齡<input name="age" type="number" min="18" max="100" required value="{{profile.get('age','')}}"></label>
+      <label>身高 cm<input name="height" type="number" step=".1" required value="{{profile.get('height','')}}"></label>
+      <label>目前體重 kg<input name="weight" type="number" step=".1" required value="{{profile.get('weight','')}}"></label>
+      <label>主要目標
+        <select name="goal">
+          {% for x in ['減脂','減重','維持體重','增肌改善體態'] %}
+          <option {{'selected' if profile.get('goal','減脂')==x}}>{{x}}</option>
+          {% endfor %}
+        </select>
+        <div class="choice-note">減脂＝降低脂肪並盡量保留肌肉；減重＝以體重下降為主；維持＝接近每日總消耗；增肌改善體態＝配合訓練提高蛋白質，必要時才小幅增加熱量。</div>
+      </label>
+      <label>日常活動量
+        <select name="activity_level">
+          <option value="low" {{'selected' if profile.get('activity_level','low')=='low'}}>很低｜大多坐著</option>
+          <option value="light" {{'selected' if profile.get('activity_level')=='light'}}>偏低｜一般生活走動</option>
+          <option value="moderate" {{'selected' if profile.get('activity_level')=='moderate'}}>中等｜走動較多或規律運動</option>
+          <option value="high" {{'selected' if profile.get('activity_level')=='high'}}>高｜體力工作或高運動量</option>
+        </select>
+      </label>
+      <label>平均每日步數<input name="steps" type="number" placeholder="不知道可留白" value="{{profile.get('steps') or ''}}"></label>
+      <label>每週運動幾天<input name="exercise_days" type="number" min="0" max="7" value="{{profile.get('exercise_days') if profile.get('exercise_days') is not none else 0}}"></label>
+    </div>
+    <details class="panel">
+      <summary><b>安全資料（有特殊狀況再填）</b></summary>
+      <div class="grid">
+        <label>目前懷孕？<select name="pregnant"><option value="no">否</option><option value="yes" {{'selected' if profile.get('pregnant')=='yes'}}>是</option></select></label>
+        <label>目前哺乳？<select name="breastfeeding"><option value="no">否</option><option value="yes" {{'selected' if profile.get('breastfeeding')=='yes'}}>是</option></select></label>
+        <label class="wide">已知疾病／特殊狀況<input name="conditions" value="{{profile.get('conditions') or ''}}"></label>
+        <label class="wide">固定藥物<input name="meds" value="{{profile.get('meds') or ''}}"></label>
+        <label>曾有進食障礙相關困擾？<select name="risk_eating"><option value="no">否</option><option value="yes" {{'selected' if profile.get('risk_eating')=='yes'}}>是／不確定</option></select></label>
+      </div>
+    </details>
+    <button class="btn">建立我的每日目標</button>
+  </form>
+</div>
+{% endblock %}
