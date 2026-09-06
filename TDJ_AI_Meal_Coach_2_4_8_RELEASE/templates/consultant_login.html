@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block content %}
+<span class="pill">TDJ 顧問後台</span><h1>代理／顧問後台登入</h1>
+<div class="panel"><p>此頁僅供 TDJ 已建立帳號的代理／顧問登入。請輸入總管理員為你設定的帳號與密碼。</p><form method="post"><label>代理／顧問帳號<input name="username" required autocomplete="username"></label><label>登入密碼<input type="password" name="password" required autocomplete="current-password"></label><button class="btn">登入顧問後台</button></form></div>
+<div class="panel"><b>提醒</b><p>如果你手上的網址包含 <code>/join/</code>，那是給學員綁定顧問歸屬的邀請連結，不是後台登入網址。</p></div>
+{% endblock %}
