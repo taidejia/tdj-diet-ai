@@ -1,0 +1,61 @@
+{% extends "base.html" %}{% block content %}
+{% if active and profile %}
+<span class="pill">今天的體態管理進度</span>
+<h1>{{profile.name}}，今天先看這四件事。</h1>
+<p class="choice-note"><b>{{profile.goal}}模式</b>｜估算 TDEE 約 {{target_meta.tdee_calc|round|int}} kcal｜今日建議 {{profile.daily_calories|round|int}} kcal{% if profile.goal in ['減重','減脂'] %}（已含約 {{target_meta.calorie_deficit_pct|round|int}}% 赤字）{% endif %}</p>
+<p class="choice-note">不是要把所有數字吃滿；重點是知道今天接下來該優先顧什麼。</p>
+{% if fasting_state.enabled %}<div class="panel fasting-panel"><span class="pill">進食時間管理</span>{% if fasting_state.phase=='fasting' %}<h2>目前斷食中｜{{fasting_state.end.strftime('%H:%M')}} 可開始進食</h2><p>距離可進食還有 <b>{{fasting_state.remaining}}</b></p>{% elif fasting_state.phase=='eating' %}<h2>目前可進食｜至 {{fasting_state.eat_end.strftime('%H:%M')}}</h2><p>進食時段還有 <b>{{fasting_state.remaining}}</b></p>{% else %}<h2>今天尚未開始斷食計時</h2><p>輸入實際開始時間，系統會自動算出下一次可進食時間。</p>{% endif %}<a class="btn secondary" href="/fasting">查看／設定時間軸</a></div>{% else %}<div class="panel"><b>想管理 168 進食時間？</b><p>可選擇開啟時間軸；不開啟也不影響餐盤教練。</p><a class="btn secondary" href="/fasting">設定進食時間</a></div>{% endif %}
+
+
+<div class="today-status-grid">
+  <div class="status-card status-wide">
+    <b>熱量</b><strong>{{totals.calories|round|int}} / {{profile.daily_calories|round|int}} kcal</strong>
+    <span>約還有 {{remaining.calories|round|int}} kcal 參考空間</span>
+  </div>
+  <div class="status-card">
+    <b>蛋白質</b><strong>{{totals.protein|round|int}} / {{profile.daily_protein|round|int}}g</strong>
+    <span>{{progress.protein.status}}</span>
+  </div>
+  <div class="status-card">
+    <b>碳水</b><strong>{{totals.carbs|round|int}} / {{profile.daily_carbs|round|int}}g</strong>
+    <span>{{progress.carbs.status}}</span>
+  </div>
+  <div class="status-card">
+    <b>脂肪</b><strong>{{totals.fat|round|int}} / {{profile.daily_fat|round|int}}g</strong>
+    <span>{{progress.fat.status}}</span>
+  </div>
+  <div class="status-card">
+    <b>蔬菜</b><strong>{{totals.veg}} / 3拳</strong>
+    <span>{{progress.veg.status}}</span>
+  </div>
+</div>
+
+<div class="panel daily-check-card">
+  <span class="pill">今日身體紀錄</span>
+  {% if body_completion and body_completion.done %}
+    <h2>✓ 今天已完成</h2><p>體重、飢餓、睡眠、排便、精神疲勞與活動狀況已記錄{% if body_completion.waist_due %}，本次腰圍也已完成{% endif %}。</p>
+    <a class="btn secondary" href="/progress">查看／更新今天紀錄</a>
+  {% else %}
+    <h2>今天還沒完成</h2><p>還缺：{{body_completion.missing|join('、') if body_completion else '身體反應紀錄'}}</p>
+    {% if body_completion and body_completion.waist_due %}<p class="choice-note">今天是方案第 {{body_completion.program_day}} 天，腰圍也需要量測。</p>{% endif %}
+    <a class="btn" href="/progress">完成今天身體紀錄</a>
+  {% endif %}
+</div>
+<div class="actions">
+  <a class="btn" href="/meal">分析這一餐</a>
+  <a class="btn secondary" href="/week">查看最近紀錄</a>
+  <a class="btn secondary" href="/progress">記錄身體反應</a>
+</div>
+{% else %}
+<section class="hero">
+  <span class="pill">TDJ AI 餐盤教練</span>
+  <h1>拍下這一餐，告訴你今天接下來怎麼吃。</h1>
+  <p>不是只算熱量，而是把每餐累計成今天的體態管理進度，找出蛋白質、主食、油脂與蔬菜真正需要調整的地方。</p>
+  <div class="actions">
+    {% if not line_user %}<a class="btn" href="/line/login">用 LINE 登入</a>
+    {% elif not active %}<a class="btn" href="/membership-required">查看使用資格</a>
+    {% elif not profile %}<a class="btn" href="/onboarding">第一次設定</a>{% endif %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
