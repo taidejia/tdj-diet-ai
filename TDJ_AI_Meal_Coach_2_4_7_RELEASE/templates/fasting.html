@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block content %}
+<span class="pill">進食時間管理</span><h1>168／間歇性斷食時間軸</h1>
+<p class="choice-note">這個功能管理「什麼時間吃」，不會取代你的每日熱量、蛋白質、蔬菜與飲水目標。</p>
+{% if unsafe %}<div class="panel"><b>目前不建議自行啟用</b><p>你的個人設定包含孕期、哺乳期或進食障礙相關風險。若想使用間歇性斷食，請先詢問醫療專業人員。</p></div>{% endif %}
+{% if state.enabled %}
+<div class="panel fasting-panel">
+{% if state.phase=='fasting' %}<span class="pill">目前斷食中</span><h2>{{state.start.strftime('%m/%d %H:%M')}} → {{state.end.strftime('%m/%d %H:%M')}}</h2><p><b>距離可開始進食還有 {{state.remaining}}</b></p>
+{% elif state.phase=='eating' %}<span class="pill">目前可進食</span><h2>{{state.end.strftime('%H:%M')}} → {{state.eat_end.strftime('%H:%M')}}</h2><p><b>本次進食時段還有 {{state.remaining}}</b></p><p>第一餐仍以蛋白質、蔬菜與適量主食為主，不需要因為空腹後一次吃很多。</p>
+{% else %}<span class="pill">等待開始</span><h2>今天什麼時候開始斷食？</h2>{% endif %}
+</div>
+<form method="post" class="panel"><input type="hidden" name="action" value="start"><label><b>本次實際開始斷食時間</b></label><input type="time" name="start_time" value="{{setting.default_start_time or '22:00'}}" required><button class="btn" type="submit">開始／重新計算本次斷食</button><p class="choice-note">例如輸入 22:00，16:8 模式會自動算出隔天 14:00 可開始進食。每天時間不同也可以重新輸入。</p></form>
+{% endif %}
+<form method="post" class="panel"><input type="hidden" name="action" value="save"><h2>時間模式設定</h2>
+<label><input type="checkbox" name="enabled" value="1" {% if setting.enabled %}checked{% endif %}> 開啟進食時間管理</label>
+<label><b>模式</b></label><select name="mode"><option {% if setting.mode=='14:10' %}selected{% endif %}>14:10</option><option {% if setting.mode=='16:8' %}selected{% endif %}>16:8</option><option {% if setting.mode=='18:6' %}selected{% endif %}>18:6</option><option value="自訂" {% if setting.mode=='自訂' %}selected{% endif %}>自訂</option></select>
+<label><b>自訂斷食小時</b></label><input type="number" name="fasting_hours" min="12" max="20" step="0.5" value="{{setting.fasting_hours or 16}}">
+<label><b>預設開始時間</b></label><input type="time" name="default_start_time" value="{{setting.default_start_time or '22:00'}}"><button class="btn" type="submit">儲存設定</button></form>
+{% endblock %}
